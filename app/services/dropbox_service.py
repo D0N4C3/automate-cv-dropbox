@@ -1,10 +1,13 @@
 from datetime import datetime
+import logging
 
 import dropbox
 from dropbox.files import WriteMode
 
 from app.config import settings
 from app.utils.retry import retry
+
+logger = logging.getLogger(__name__)
 
 
 class DropboxService:
@@ -36,6 +39,7 @@ class DropboxService:
                 "DROPBOX_ACCESS_TOKEN."
             )
         self.base_path = settings.dropbox_base_path.rstrip("/")
+        logger.info("Dropbox service initialized base_path=%s", self.base_path)
 
     @staticmethod
     def _role_folder(role: str) -> str:
@@ -44,6 +48,7 @@ class DropboxService:
     def upload_and_share(self, filename: str, content: bytes, role: str, date_applied: datetime) -> str:
         folder = f"{self.base_path}/{self._role_folder(role)}/{date_applied.date().isoformat()}"
         path = f"{folder}/{filename}"
+        logger.info("Uploading file to Dropbox path=%s", path)
 
         def _upload() -> str:
             self.client.files_create_folder_v2(folder, autorename=False)
@@ -51,8 +56,8 @@ class DropboxService:
 
         try:
             retry(_upload, attempts=1)
-        except Exception:
-            pass
+        except Exception as exc:  # noqa: BLE001
+            logger.info("Dropbox folder create skipped/failed for %s: %s", folder, exc)
 
         def _store() -> str:
             self.client.files_upload(content, path, mode=WriteMode("overwrite"))
@@ -65,4 +70,6 @@ class DropboxService:
                     raise
                 return links[0].url.replace("?dl=0", "?dl=1")
 
-        return retry(_store, attempts=3, wait_seconds=2)
+        shared_url = retry(_store, attempts=3, wait_seconds=2)
+        logger.info("Dropbox upload complete path=%s", path)
+        return shared_url

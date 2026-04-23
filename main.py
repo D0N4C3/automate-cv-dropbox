@@ -9,9 +9,15 @@ from app.utils.logging_config import setup_logging
 
 def run_sync() -> None:
     setup_logging(settings.log_level)
-    init_db()
-    logging.getLogger(__name__).info("Starting email sync job")
-    SyncService().run()
+    logger = logging.getLogger(__name__)
+    logger.info("Starting email sync job")
+    try:
+        init_db()
+        SyncService().run()
+        logger.info("Email sync job completed")
+    except Exception as exc:  # noqa: BLE001
+        logger.exception("Email sync job failed: %s", exc)
+        raise
 
 
 if __name__ == "__main__":

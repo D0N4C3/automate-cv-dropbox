@@ -21,6 +21,7 @@ class SyncService:
     def __init__(self) -> None:
         self.imap_service = IMAPService()
         self.dropbox_service = DropboxService()
+        logger.info("Sync service initialized")
 
     def run(self) -> None:
         with SessionLocal() as db:
@@ -55,6 +56,7 @@ class SyncService:
             return
 
         attachments = extract_supported_attachments(msg)
+        logger.info("Processing uid=%s message_id=%s role=%s attachments=%s", uid, message_id, role, len(attachments))
         if not attachments:
             logger.info("Skipping uid=%s: no supported attachments", uid)
             return

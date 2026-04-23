@@ -20,13 +20,16 @@ class IMAPService:
         self.port = settings.imap_port
         self.user = settings.email_user
         self.password = settings.email_pass
+        logger.info("IMAP service initialized server=%s port=%s user=%s", self.server, self.port, self.user)
 
     def _connect(self) -> imaplib.IMAP4_SSL:
         if not self.server or not self.user or not self.password:
             raise ValueError("IMAP credentials are not configured. Check IMAP_SERVER, EMAIL_USER, EMAIL_PASS.")
+        logger.info("Connecting to IMAP server=%s port=%s", self.server, self.port)
         conn = imaplib.IMAP4_SSL(self.server, self.port)
         conn.login(self.user, self.password)
         conn.select("INBOX")
+        logger.info("Connected to IMAP mailbox INBOX")
         return conn
 
     def fetch_messages(self, first_run: bool) -> list[FetchedEmail]:
@@ -36,14 +39,17 @@ class IMAPService:
                 since = settings.initial_backfill_date.strftime("%d-%b-%Y")
                 criteria = f'(SINCE "{since}")' if first_run else "(UNSEEN)"
                 status, data = conn.uid("search", None, criteria)
+                logger.info("IMAP search criteria=%s status=%s", criteria, status)
                 if status != "OK":
                     logger.error("IMAP search failed: %s", status)
                     return []
                 uids = data[0].decode().split() if data and data[0] else []
+                logger.info("IMAP search returned %s UID(s)", len(uids))
                 messages: list[FetchedEmail] = []
                 for uid in uids:
                     fetch_status, msg_data = conn.uid("fetch", uid, "(RFC822)")
                     if fetch_status != "OK" or not msg_data or not msg_data[0]:
+                        logger.warning("IMAP fetch failed uid=%s status=%s", uid, fetch_status)
                         continue
                     raw = msg_data[0][1]
                     messages.append(FetchedEmail(uid=uid, raw=raw))

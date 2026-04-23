@@ -1,0 +1,21 @@
+import os
+from dataclasses import dataclass
+from datetime import date
+
+
+@dataclass(frozen=True)
+class Settings:
+    imap_server: str = os.getenv("IMAP_SERVER", "")
+    imap_port: int = int(os.getenv("IMAP_PORT", "993"))
+    email_user: str = os.getenv("EMAIL_USER", "")
+    email_pass: str = os.getenv("EMAIL_PASS", "")
+    dropbox_access_token: str = os.getenv("DROPBOX_ACCESS_TOKEN", "")
+    dropbox_base_path: str = os.getenv("DROPBOX_BASE_PATH", "/CVs")
+    database_url: str = os.getenv("DATABASE_URL", "sqlite:///app.db")
+    app_secret_key: str = os.getenv("APP_SECRET_KEY", "dev-secret")
+    log_level: str = os.getenv("LOG_LEVEL", "INFO")
+    timezone: str = os.getenv("TIMEZONE", "UTC")
+    initial_backfill_date: date = date(2026, 1, 1)
+
+
+settings = Settings()

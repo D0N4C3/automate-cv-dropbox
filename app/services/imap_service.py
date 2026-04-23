@@ -22,6 +22,8 @@ class IMAPService:
         self.password = settings.email_pass
 
     def _connect(self) -> imaplib.IMAP4_SSL:
+        if not self.server or not self.user or not self.password:
+            raise ValueError("IMAP credentials are not configured. Check IMAP_SERVER, EMAIL_USER, EMAIL_PASS.")
         conn = imaplib.IMAP4_SSL(self.server, self.port)
         conn.login(self.user, self.password)
         conn.select("INBOX")
@@ -31,7 +33,8 @@ class IMAPService:
         def _op() -> list[FetchedEmail]:
             conn = self._connect()
             try:
-                criteria = '(SINCE "01-Jan-2026")' if first_run else "(UNSEEN)"
+                since = settings.initial_backfill_date.strftime("%d-%b-%Y")
+                criteria = f'(SINCE "{since}")' if first_run else "(UNSEEN)"
                 status, data = conn.uid("search", None, criteria)
                 if status != "OK":
                     logger.error("IMAP search failed: %s", status)

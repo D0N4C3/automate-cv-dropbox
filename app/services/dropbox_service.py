@@ -9,6 +9,8 @@ from app.utils.retry import retry
 
 class DropboxService:
     def __init__(self) -> None:
+        if not settings.dropbox_access_token:
+            raise ValueError("DROPBOX_ACCESS_TOKEN is not configured.")
         self.client = dropbox.Dropbox(settings.dropbox_access_token)
         self.base_path = settings.dropbox_base_path.rstrip("/")
 

@@ -15,7 +15,7 @@ Production-ready Python project for ingesting job applications over IMAP, classi
   - Email address = Low
 - CV parsing via `pdfplumber` + `PyMuPDF` fallback and `python-docx`.
 - Dropbox upload to structured folders and shared-link generation.
-- Persistent storage in SQLite/PostgreSQL via SQLAlchemy.
+- Persistent storage in MySQL/SQLite/PostgreSQL via SQLAlchemy.
 - Duplicate prevention using unique message/attachment constraints plus pre-check.
 - Logging to console + rotating file logs.
 - Flask/Bootstrap HR dashboard with search + filters.
@@ -63,7 +63,7 @@ Copy `.env.example` to `.env` and set values:
 - `IMAP_PORT`
 - `DROPBOX_ACCESS_TOKEN`
 - `DROPBOX_BASE_PATH` (default `/CVs`)
-- `DATABASE_URL` (e.g. `sqlite:///app.db` or PostgreSQL URL)
+- `DATABASE_URL` (e.g. MySQL `mysql+pymysql://user:pass@host/db`)
 - `APP_SECRET_KEY`
 - `LOG_LEVEL`
 
@@ -74,6 +74,8 @@ python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env
+# set DATABASE_URL with your MySQL credentials
+# mysql+pymysql://zelavclr_job:Clickbaby1!@localhost/zelavclr_ies_job_applications
 ```
 
 ## Run Sync (cron-safe)

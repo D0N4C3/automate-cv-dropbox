@@ -72,6 +72,7 @@ Copy `.env.example` to `.env` and set values:
 - `LOG_LEVEL`
 - `ENABLE_HOURLY_SYNC` (`true`/`false`, default `true`)
 - `SYNC_INTERVAL_MINUTES` (default `60`)
+- `SCHEDULER_LOCK_FILE` (default `/tmp/hr_cvs_scheduler.lock`)
 
 ## Setup
 
@@ -106,7 +107,10 @@ When the Flask dashboard starts (`run_dashboard.py` / `passenger_wsgi.py`), it n
 
 - Disable it with `ENABLE_HOURLY_SYNC=false`
 - Change frequency with `SYNC_INTERVAL_MINUTES=<minutes>`
+- Change cross-process lock file with `SCHEDULER_LOCK_FILE=<path>`
 - Manual **Run Sync Now** remains available in the UI
+
+The scheduler now waits one interval before its first automatic run and uses a process-level lock so only one web worker executes sync at a time.
 
 For deployments where you prefer cron-only execution, disable the scheduler and keep your existing cron for `python3 main.py`.
 
@@ -162,6 +166,7 @@ In **Environment variables** (same screen), add your required values:
 - `LOG_LEVEL`
 - `ENABLE_HOURLY_SYNC` (`true`/`false`, default `true`)
 - `SYNC_INTERVAL_MINUTES` (default `60`)
+- `SCHEDULER_LOCK_FILE` (default `/tmp/hr_cvs_scheduler.lock`)
 
 ### 5) Initialize/restart
 - Click **Restart** for the Python app in cPanel after changes.

@@ -9,9 +9,32 @@ from app.utils.retry import retry
 
 class DropboxService:
     def __init__(self) -> None:
-        if not settings.dropbox_access_token:
-            raise ValueError("DROPBOX_ACCESS_TOKEN is not configured.")
-        self.client = dropbox.Dropbox(settings.dropbox_access_token)
+        if settings.dropbox_app_key and settings.dropbox_app_secret:
+            if settings.dropbox_refresh_token:
+                self.client = dropbox.Dropbox(
+                    oauth2_refresh_token=settings.dropbox_refresh_token,
+                    app_key=settings.dropbox_app_key,
+                    app_secret=settings.dropbox_app_secret,
+                )
+            elif settings.dropbox_access_token:
+                self.client = dropbox.Dropbox(
+                    oauth2_access_token=settings.dropbox_access_token,
+                    app_key=settings.dropbox_app_key,
+                    app_secret=settings.dropbox_app_secret,
+                )
+            else:
+                raise ValueError(
+                    "DROPBOX_APP_KEY and DROPBOX_APP_SECRET are set, but neither "
+                    "DROPBOX_REFRESH_TOKEN nor DROPBOX_ACCESS_TOKEN is configured."
+                )
+        elif settings.dropbox_access_token:
+            self.client = dropbox.Dropbox(settings.dropbox_access_token)
+        else:
+            raise ValueError(
+                "Configure Dropbox auth using DROPBOX_APP_KEY + DROPBOX_APP_SECRET "
+                "(with DROPBOX_REFRESH_TOKEN or DROPBOX_ACCESS_TOKEN), or provide "
+                "DROPBOX_ACCESS_TOKEN."
+            )
         self.base_path = settings.dropbox_base_path.rstrip("/")
 
     @staticmethod

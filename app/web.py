@@ -6,6 +6,7 @@ from flask import Flask
 from app.config import settings
 from app.database import init_db
 from app.routes.dashboard import bp as dashboard_bp
+from app.services.scheduler_service import scheduler
 from app.utils.logging_config import setup_logging
 
 logger = logging.getLogger(__name__)
@@ -17,6 +18,9 @@ def create_app() -> Flask:
     app_instance.config["SECRET_KEY"] = settings.app_secret_key
     init_db()
     app_instance.register_blueprint(dashboard_bp)
+
+    if settings.enable_hourly_sync:
+        scheduler.start()
 
     @app_instance.before_request
     def _log_request() -> None:

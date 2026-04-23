@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 
 from sqlalchemy import func, select
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 from werkzeug.security import check_password_hash, generate_password_hash
 
@@ -43,7 +44,11 @@ def create_user(
         created_at=datetime.utcnow(),
     )
     db.add(user)
-    db.commit()
+    try:
+        db.commit()
+    except SQLAlchemyError:
+        db.rollback()
+        return False, "Unable to create user right now. Please try again."
     return True, "User created successfully."
 
 

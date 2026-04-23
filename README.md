@@ -1,293 +1,102 @@
-# 📄 Project Overview: Automated CV Collection, Parsing & HR Dashboard System
-
-## 🧩 Project Title
-Automated Email-to-Dropbox CV Processing & Recruitment Dashboard
-
----
-
-## 🎯 Objective
-Develop a Python-based system that automatically retrieves job application emails from `job@interethiopia.com`, intelligently classifies applicants based on job roles, extracts CVs, identifies candidate names, uploads files to Dropbox, and provides an internal web dashboard for HR to manage and review all applicants.
-
----
-
-## 🏢 Business Context
-The organization receives a large number of job applications via email for roles such as:
-
-- Lithium-ion Battery Expert  
-- Sales & Marketing  
-
-Manual handling creates inefficiencies in sorting, tracking, and reviewing candidates. This system automates the intake pipeline and provides a centralized dashboard for HR operations.
-
----
-
-## ⚙️ Core Features
-
-### 📥 Email Synchronization
-- Connect to email server using IMAP
-- Fetch unread/new emails from inbox
-- Execute every hour via cron job
-- Secure authentication using environment variables
-
----
-
-### 🕘 Initial Data Backfill (First Run Logic)
-- On first execution, the system performs a **historical fetch**
-- Retrieve all emails received **after January 1, 2026**
-- Use IMAP date filter:
-  - `SINCE 01-Jan-2026`
-- Process all matching emails as if they were new:
-  - Apply filtering
-  - Extract attachments
-  - Upload CVs
-  - Store metadata
-- Mark all processed emails to prevent duplication
-
-**After initial run:**
-- System switches to incremental mode:
-  - Only fetches **new/unseen emails**
-
----
-
-### 🔍 Email Filtering & Role Classification
-- Analyze subject and body of emails
-- Match against predefined keyword groups
-
-**Battery Role Keywords:**
-- battery
-- lithium
-- lithium-ion
-- li-ion
-- expert
-
-**Sales & Marketing Keywords:**
-- sales
-- marketing  
-
-**REMARKS**
-- Assign each application to a role category
-- Ignore irrelevant emails
-
----
-
-### 📎 Attachment Extraction
-- Extract CV attachments from emails (and cover letters if applicable)
-- Supported formats:
-  - `.pdf`
-  - `.doc`
-  - `.docx`
-- Validate file types before processing
-
----
-
-## 🧠 Candidate Name Extraction Algorithm
-
-To reliably identify the applicant’s full name, the system will implement a **multi-source extraction strategy with fallback logic**:
-
-### 🔹 Step 1: Email Body Parsing
-- Scan email body for common patterns:
-  - “My name is …”
-  - “I am …”
-  - Signature blocks
-- Use regex and NLP heuristics to extract probable names
-
----
-
-### 🔹 Step 2: Email Address Parsing
-- Extract name from email format:
-  - `john.doe@gmail.com` → John Doe
-  - `johndoe123@...` → John Doe (clean numeric suffix)
-- Apply formatting:
-  - Split by `.`, `_`, `-`
-  - Capitalize words
-
----
-
-### 🔹 Step 3: CV Content Parsing
-- Extract text from CV files:
-  - PDFs → `pdfplumber` / `PyMuPDF`
-  - DOCX → `python-docx`
-- Identify name candidates:
-  - Usually top of document
-  - Largest font / first line
-- Apply heuristics:
-  - 2–4 words
-  - No numbers
-  - Proper capitalization
-
----
-
-### 🔹 Step 4: Confidence Scoring System
-
-| Source        | Confidence |
-|--------------|-----------|
-| CV Content    | High      |
-| Email Body    | Medium    |
-| Email Address | Low       |
-
-- Select highest-confidence result
-- Fallback if higher-confidence data unavailable
-
----
-
-### 🔹 Step 5: Final Normalization
-- Remove special characters
-- Ensure proper capitalization
-- Store as: `FirstName LastName`
-
----
-
-## ☁️ Dropbox Integration
-
-- Upload CVs to structured folders:
-
-/CVs/Battery_Expert/YYYY-MM-DD/ /CVs/Sales_Marketing/YYYY-MM-DD/
-
-- Generate **shared Dropbox links** for each uploaded CV
-- Store links for dashboard access
-
----
-
-## 🗂️ Data Storage Layer
-
-A lightweight database (SQLite or PostgreSQL) will store applicant metadata:
-
-### 📊 Applicant Table Schema
-
-| Field              | Description                          |
-|-------------------|--------------------------------------|
-| id                | Unique identifier                    |
-| full_name         | Extracted candidate name             |
-| email             | Applicant email address              |
-| role              | Detected job category                |
-| cv_file_name      | Original file name                   |
-| dropbox_link      | Shareable Dropbox URL                |
-| date_applied      | Timestamp                            |
-| processed         | Boolean flag                         |
-
----
-
-## 🌐 Web Dashboard for HR
-
-### 🧑‍💼 Purpose
-Provide HR with a clean interface to:
-- View all applicants
-- Access CVs instantly
-- Filter and search candidates
-
----
-
-### 🖥️ Dashboard Features
-
-#### 📋 Applicant List View
-- Table displaying:
-  - Full Name
-  - Email
-  - Role
-  - Date Applied
-  - CV Link (clickable)
-
----
-
-#### 🔎 Search & Filtering
-- Filter by:
-  - Role (Battery / Sales)
-  - Date range
-- Search by:
-  - Name
-  - Email
-
----
-
-#### 🔗 CV Access
-- Direct link to Dropbox file
-- Opens in new tab
-
----
-
-#### 📊 Status Tracking (Optional Enhancement)
-- Add statuses:
-  - New
-  - Reviewed
-  - Shortlisted
-  - Rejected
-
----
-
-### 🧰 Tech Stack (Dashboard)
-
-| Layer        | Technology         |
-|-------------|------------------|
-| Backend     | Flask (Python)   |
-| Frontend    | HTML, CSS, JS    |
-| UI Framework| Bootstrap        |
-| Database    | SQLite / PostgreSQL |
-
----
-
-## 🏗️ System Architecture
-
-Email Server (IMAP) ↓ Initial Backfill (Jan 1, 2026 → Present) ↓ Email Fetcher (Cron-based Incremental Sync) ↓ Filtering & Classification Engine ↓ Attachment Extractor ↓ Name Extraction Algorithm ↓ Dropbox Upload + Link Generation ↓ Database Storage ↓ Flask Web Dashboard (HR Access)
-
----
-
-## ⏱️ Scheduling & Execution
-
-- Cron Job runs every hour:
-
-0 * * * * python3 /home/user/app/main.py
-
-- Ensures:
-  - No continuous processes
-  - Hosting compatibility
-
----
-
-## 📝 Logging & Monitoring
-
-- Track:
-  - Processed emails
-  - Extracted names
-  - Upload success/failure
-  - Initial backfill progress
-- Store logs in file or database
-
----
-
-## 🔐 Security Considerations
-
-- Use environment variables for credentials
-- Secure Dropbox API token
-- Restrict dashboard access (basic auth or login system)
-- Prevent unauthorized file access
-
----
-
-## 🚀 Deployment Plan
-
-- Host backend and dashboard on Namecheap Stellar Plus
-- Configure Python app via cPanel
-- Set cron jobs for automation
-- Deploy Flask app for internal HR access
-
----
-
-## 📈 Future Enhancements
-
-- AI-powered CV parsing (skills, experience extraction)
-- Candidate ranking system
-- Email auto-response system
-- Multi-role classification using NLP
-- Admin analytics dashboard
-- Integration with HR tools (ATS systems)
-
----
-
-## ✅ Expected Outcome
-
-- Fully automated recruitment intake system
-- Accurate candidate identification (name extraction)
-- Organized cloud storage with direct access
-- Centralized HR dashboard for efficient decision-making
-- Significant reduction in manual processing time
-
----
+# Automated Email-to-Dropbox CV Processing & Recruitment Dashboard
+
+Production-ready Python project for ingesting job applications over IMAP, classifying roles, parsing candidate names/CVs, uploading files to Dropbox, and presenting all applicants in a Flask dashboard.
+
+## Features
+
+- IMAP ingestion with first-run backfill (`SINCE 01-Jan-2026`) and incremental hourly sync (`UNSEEN`).
+- Keyword role classification:
+  - **Battery Expert**: `battery`, `lithium`, `lithium-ion`, `li-ion`, `expert`
+  - **Sales & Marketing**: `sales`, `marketing`
+- Attachment extraction for `.pdf`, `.doc`, `.docx`.
+- Multi-source candidate name extraction with confidence scoring:
+  - CV content = High
+  - Email body = Medium
+  - Email address = Low
+- CV parsing via `pdfplumber` + `PyMuPDF` fallback and `python-docx`.
+- Dropbox upload to structured folders and shared-link generation.
+- Persistent storage in SQLite/PostgreSQL via SQLAlchemy.
+- Duplicate prevention using unique message/attachment constraints plus pre-check.
+- Logging to console + rotating file logs.
+- Flask/Bootstrap HR dashboard with search + filters.
+
+## Project Structure
+
+```
+.
+├── app/
+│   ├── config.py
+│   ├── database.py
+│   ├── models.py
+│   ├── web.py
+│   ├── routes/
+│   │   └── dashboard.py
+│   ├── services/
+│   │   ├── applicant_service.py
+│   │   ├── attachment_service.py
+│   │   ├── classifier.py
+│   │   ├── cv_parser.py
+│   │   ├── dropbox_service.py
+│   │   ├── imap_service.py
+│   │   ├── name_extractor.py
+│   │   └── sync_service.py
+│   └── utils/
+│       ├── helpers.py
+│       ├── logging_config.py
+│       └── retry.py
+├── templates/
+│   ├── base.html
+│   └── index.html
+├── .env.example
+├── requirements.txt
+├── main.py
+└── run_dashboard.py
+```
+
+## Environment Variables
+
+Copy `.env.example` to `.env` and set values:
+
+- `EMAIL_USER`
+- `EMAIL_PASS`
+- `IMAP_SERVER`
+- `IMAP_PORT`
+- `DROPBOX_ACCESS_TOKEN`
+- `DROPBOX_BASE_PATH` (default `/CVs`)
+- `DATABASE_URL` (e.g. `sqlite:///app.db` or PostgreSQL URL)
+- `APP_SECRET_KEY`
+- `LOG_LEVEL`
+
+## Setup
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env
+```
+
+## Run Sync (cron-safe)
+
+```bash
+python3 main.py
+```
+
+Recommended cron:
+
+```cron
+0 * * * * cd /path/to/automate-cv-dropbox && /usr/bin/python3 main.py >> logs/cron.log 2>&1
+```
+
+## Run Dashboard
+
+```bash
+python3 run_dashboard.py
+```
+
+Then visit `http://localhost:5000`.
+
+## Notes
+
+- `.doc` extraction is accepted as attachment type, but legacy DOC text parsing is limited unless external converters are installed.
+- First successful run sets `sync_state.initial_backfill_complete=true`; later runs fetch only unseen emails.

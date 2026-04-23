@@ -1,7 +1,8 @@
 import logging
 
 import app  # noqa: F401
-from flask import Flask
+from flask import Flask, Response
+from werkzeug.exceptions import HTTPException
 
 from app.config import settings
 from app.database import init_db
@@ -27,6 +28,15 @@ def create_app() -> Flask:
         from flask import request
 
         logger.info("HTTP request method=%s path=%s remote=%s", request.method, request.path, request.remote_addr)
+
+    @app_instance.route("/favicon.ico")
+    def favicon() -> Response:
+        return Response(status=204)
+
+    @app_instance.errorhandler(HTTPException)
+    def _handle_http_error(exc: HTTPException):
+        logger.info("HTTP exception status=%s description=%s", exc.code, exc.description)
+        return exc
 
     @app_instance.errorhandler(Exception)
     def _handle_unexpected_error(exc: Exception):

@@ -30,6 +30,24 @@ Manual handling creates inefficiencies in sorting, tracking, and reviewing candi
 
 ---
 
+### 🕘 Initial Data Backfill (First Run Logic)
+- On first execution, the system performs a **historical fetch**
+- Retrieve all emails received **after January 1, 2026**
+- Use IMAP date filter:
+  - `SINCE 01-Jan-2026`
+- Process all matching emails as if they were new:
+  - Apply filtering
+  - Extract attachments
+  - Upload CVs
+  - Store metadata
+- Mark all processed emails to prevent duplication
+
+**After initial run:**
+- System switches to incremental mode:
+  - Only fetches **new/unseen emails**
+
+---
+
 ### 🔍 Email Filtering & Role Classification
 - Analyze subject and body of emails
 - Match against predefined keyword groups
@@ -99,7 +117,6 @@ To reliably identify the applicant’s full name, the system will implement a **
 ---
 
 ### 🔹 Step 4: Confidence Scoring System
-Assign scores to each source:
 
 | Source        | Confidence |
 |--------------|-----------|
@@ -209,7 +226,7 @@ Provide HR with a clean interface to:
 
 ## 🏗️ System Architecture
 
-Email Server (IMAP) ↓ Email Fetcher (Cron आधारित) ↓ Filtering & Classification Engine ↓ Attachment Extractor ↓ Name Extraction Algorithm ↓ Dropbox Upload + Link Generation ↓ Database Storage ↓ Flask Web Dashboard (HR Access)
+Email Server (IMAP) ↓ Initial Backfill (Jan 1, 2026 → Present) ↓ Email Fetcher (Cron-based Incremental Sync) ↓ Filtering & Classification Engine ↓ Attachment Extractor ↓ Name Extraction Algorithm ↓ Dropbox Upload + Link Generation ↓ Database Storage ↓ Flask Web Dashboard (HR Access)
 
 ---
 
@@ -231,6 +248,7 @@ Email Server (IMAP) ↓ Email Fetcher (Cron आधारित) ↓ Filtering & 
   - Processed emails
   - Extracted names
   - Upload success/failure
+  - Initial backfill progress
 - Store logs in file or database
 
 ---

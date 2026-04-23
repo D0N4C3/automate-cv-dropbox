@@ -1,7 +1,16 @@
+from datetime import datetime, time
+
 from sqlalchemy import and_, or_, select
 from sqlalchemy.orm import Session
 
 from app.models import Applicant, SyncState
+
+
+def _safe_iso_date(value: str) -> datetime | None:
+    try:
+        return datetime.fromisoformat(value)
+    except ValueError:
+        return None
 
 
 def get_state(db: Session, key: str) -> str | None:
@@ -30,8 +39,12 @@ def search_applicants(db: Session, query: str | None, role: str | None, date_fro
     if role:
         stmt = stmt.where(Applicant.role == role)
     if date_from:
-        stmt = stmt.where(Applicant.date_applied >= date_from)
+        parsed_from = _safe_iso_date(date_from)
+        if parsed_from:
+            stmt = stmt.where(Applicant.date_applied >= datetime.combine(parsed_from.date(), time.min))
     if date_to:
-        stmt = stmt.where(Applicant.date_applied <= date_to)
+        parsed_to = _safe_iso_date(date_to)
+        if parsed_to:
+            stmt = stmt.where(Applicant.date_applied <= datetime.combine(parsed_to.date(), time.max))
     stmt = stmt.order_by(Applicant.date_applied.desc())
     return list(db.execute(stmt).scalars())

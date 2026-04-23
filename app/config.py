@@ -11,7 +11,7 @@ class Settings:
     email_pass: str = os.getenv("EMAIL_PASS", "")
     dropbox_access_token: str = os.getenv("DROPBOX_ACCESS_TOKEN", "")
     dropbox_base_path: str = os.getenv("DROPBOX_BASE_PATH", "/CVs")
-    database_url: str = os.getenv("DATABASE_URL", "sqlite:///app.db")
+    database_url: str = os.getenv("DATABASE_URL", "mysql+pymysql://user:pass@localhost/db_name")
     app_secret_key: str = os.getenv("APP_SECRET_KEY", "dev-secret")
     log_level: str = os.getenv("LOG_LEVEL", "INFO")
     timezone: str = os.getenv("TIMEZONE", "UTC")

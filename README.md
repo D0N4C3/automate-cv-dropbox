@@ -109,3 +109,46 @@ Then visit `http://localhost:5000`.
   - **Legacy fallback:** `DROPBOX_ACCESS_TOKEN` only
 - `.doc` extraction is accepted as attachment type, but legacy DOC text parsing is limited unless external converters are installed.
 - First successful run sets `sync_state.initial_backfill_complete=true`; later runs fetch only unseen emails.
+
+
+## Deploy on Namecheap (cPanel Python App)
+
+This project already uses **Flask** (`Flask==3.1.0`) and exposes a WSGI app for hosting.
+
+### 1) Create the Python app in Namecheap
+Use cPanel → **Setup Python App** → **Create Application** with values like:
+
+- **Python version:** 3.11 (or latest available 3.x)
+- **Application root:** `hr_cvs` (or your chosen folder)
+- **Application URL:** your domain/subdomain
+- **Application startup file:** `passenger_wsgi.py`
+- **Application Entry point:** `application`
+
+### 2) Upload project files
+Upload this repository into your selected **Application root**.
+
+### 3) Install dependencies in the app virtualenv
+From cPanel terminal (or SSH):
+
+```bash
+cd ~/hr_cvs
+pip install -r requirements.txt
+```
+
+### 4) Configure environment variables
+In **Environment variables** (same screen), add your required values:
+
+- `EMAIL_USER`, `EMAIL_PASS`, `IMAP_SERVER`, `IMAP_PORT`
+- `DROPBOX_APP_KEY`, `DROPBOX_APP_SECRET`, `DROPBOX_REFRESH_TOKEN` (recommended)
+- `DATABASE_URL`
+- `APP_SECRET_KEY`
+- `LOG_LEVEL`
+
+### 5) Initialize/restart
+- Click **Restart** for the Python app in cPanel after changes.
+- If using MySQL on Namecheap, make sure `DATABASE_URL` points to the cPanel DB host/user/password/db.
+
+### 6) Verify
+Open your configured URL and confirm the dashboard loads.
+
+> Note: `main.py` is your sync worker entrypoint (for cron), while `passenger_wsgi.py` is the web WSGI entrypoint.

@@ -20,6 +20,7 @@ class Settings:
     timezone: str = os.getenv("TIMEZONE", "UTC")
     enable_hourly_sync: bool = os.getenv("ENABLE_HOURLY_SYNC", "true").lower() in {"1", "true", "yes"}
     sync_interval_minutes: int = int(os.getenv("SYNC_INTERVAL_MINUTES", "60"))
+    scheduler_lock_file: str = os.getenv("SCHEDULER_LOCK_FILE", "/tmp/hr_cvs_scheduler.lock")
     initial_backfill_date: date = date(2026, 1, 1)
 
 

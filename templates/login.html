@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row g-4 justify-content-center">
+  <div class="col-12 col-lg-5">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-white"><strong>Login</strong></div>
+      <div class="card-body">
+        <form method="post" action="{{ url_for('dashboard.login_post') }}" class="row g-3">
+          <div class="col-12">
+            <label class="form-label">Email</label>
+            <input class="form-control" type="email" name="email" required />
+          </div>
+          <div class="col-12">
+            <label class="form-label">Password</label>
+            <input class="form-control" type="password" name="password" required />
+          </div>
+          <div class="col-12 d-grid">
+            <button class="btn btn-primary">Login</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  {% if can_register %}
+  <div class="col-12 col-lg-7">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-white"><strong>Create Initial Admin Account</strong></div>
+      <div class="card-body">
+        <p class="text-muted small">Registration is only available for the first account. After this, users can only be added by logged-in staff.</p>
+        <form method="post" action="{{ url_for('dashboard.register_first_user') }}" class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label">First name</label>
+            <input class="form-control" name="first_name" required />
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Last name</label>
+            <input class="form-control" name="last_name" required />
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Email</label>
+            <input class="form-control" type="email" name="email" required />
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Password</label>
+            <input class="form-control" type="password" name="password" required />
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Job position</label>
+            <select class="form-select" name="job_position" required>
+              <option value="" selected disabled>Select position</option>
+              {% for position in job_positions %}
+                <option value="{{ position }}">{{ position }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-12 d-grid">
+            <button class="btn btn-outline-primary">Register Initial Account</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

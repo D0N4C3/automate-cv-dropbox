@@ -1,9 +1,11 @@
 import logging
 import math
+from functools import wraps
 
-from flask import Blueprint, flash, redirect, render_template, request, url_for
+from flask import Blueprint, flash, g, redirect, render_template, request, session, url_for
 
 from app.database import SessionLocal
+from app.models import User
 from app.services.applicant_service import (
     STATUS_OPTIONS,
     get_dashboard_summary,
@@ -12,6 +14,7 @@ from app.services.applicant_service import (
     update_applicant_status,
 )
 from app.services.scheduler_service import scheduler
+from app.services.user_service import JOB_POSITIONS, authenticate_user, create_user, get_user_count
 
 bp = Blueprint("dashboard", __name__)
 logger = logging.getLogger(__name__)
@@ -19,7 +22,94 @@ logger = logging.getLogger(__name__)
 CONFIDENCE_OPTIONS = ["High", "Medium", "Low"]
 
 
+def login_required(view):
+    @wraps(view)
+    def wrapped_view(*args, **kwargs):
+        if g.current_user is None:
+            return redirect(url_for("dashboard.login", next=request.full_path))
+        return view(*args, **kwargs)
+
+    return wrapped_view
+
+
+@bp.before_app_request
+def load_logged_in_user() -> None:
+    user_id = session.get("user_id")
+    if not user_id:
+        g.current_user = None
+        return
+
+    with SessionLocal() as db:
+        g.current_user = db.get(User, user_id)
+
+
+@bp.get("/login")
+def login():
+    if g.current_user is not None:
+        return redirect(url_for("dashboard.index"))
+
+    with SessionLocal() as db:
+        can_register = get_user_count(db) == 0
+
+    return render_template("login.html", can_register=can_register, job_positions=JOB_POSITIONS)
+
+
+@bp.post("/login")
+def login_post():
+    email = request.form.get("email", "").strip()
+    password = request.form.get("password", "")
+    with SessionLocal() as db:
+        user = authenticate_user(db, email=email, password=password)
+
+    if user is None:
+        flash("Invalid email or password.", "danger")
+        return redirect(url_for("dashboard.login"))
+
+    session.clear()
+    session["user_id"] = user.id
+    flash("Logged in successfully.", "success")
+    return redirect(url_for("dashboard.index"))
+
+
+@bp.post("/register")
+def register_first_user():
+    first_name = request.form.get("first_name", "").strip()
+    last_name = request.form.get("last_name", "").strip()
+    email = request.form.get("email", "").strip()
+    password = request.form.get("password", "")
+    job_position = request.form.get("job_position", "").strip()
+
+    if not all([first_name, last_name, email, password, job_position]):
+        flash("All fields are required.", "danger")
+        return redirect(url_for("dashboard.login"))
+
+    with SessionLocal() as db:
+        if get_user_count(db) > 0:
+            flash("Registration from login page is disabled.", "danger")
+            return redirect(url_for("dashboard.login"))
+
+        ok, message = create_user(
+            db,
+            first_name=first_name,
+            last_name=last_name,
+            email=email,
+            password=password,
+            job_position=job_position,
+        )
+
+    flash(message, "success" if ok else "danger")
+    return redirect(url_for("dashboard.login"))
+
+
+@bp.get("/logout")
+def logout():
+    session.clear()
+    flash("You have been logged out.", "success")
+    return redirect(url_for("dashboard.login"))
+
+
 @bp.get("/")
+@login_required
 def index():
     query = request.args.get("q", "").strip() or None
     role = request.args.get("role", "").strip() or None
@@ -68,7 +158,41 @@ def index():
     )
 
 
+@bp.get("/users/new")
+@login_required
+def new_user_form():
+    return render_template("new_user.html", job_positions=JOB_POSITIONS)
+
+
+@bp.post("/users")
+@login_required
+def create_user_post():
+    first_name = request.form.get("first_name", "").strip()
+    last_name = request.form.get("last_name", "").strip()
+    email = request.form.get("email", "").strip()
+    password = request.form.get("password", "")
+    job_position = request.form.get("job_position", "").strip()
+
+    if not all([first_name, last_name, email, password, job_position]):
+        flash("All fields are required.", "danger")
+        return redirect(url_for("dashboard.new_user_form"))
+
+    with SessionLocal() as db:
+        ok, message = create_user(
+            db,
+            first_name=first_name,
+            last_name=last_name,
+            email=email,
+            password=password,
+            job_position=job_position,
+        )
+
+    flash(message, "success" if ok else "danger")
+    return redirect(url_for("dashboard.new_user_form" if not ok else "dashboard.index"))
+
+
 @bp.post("/sync-now")
+@login_required
 def sync_now():
     logger.info("Manual sync requested from dashboard remote=%s", request.remote_addr)
     try:
@@ -82,6 +206,7 @@ def sync_now():
 
 
 @bp.post("/applicants/<int:applicant_id>/status")
+@login_required
 def set_status(applicant_id: int):
     selected_status = request.form.get("status", "").strip()
     redirect_url = request.form.get("redirect_to") or url_for("dashboard.index")

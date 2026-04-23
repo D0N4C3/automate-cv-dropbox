@@ -17,7 +17,7 @@ Production-ready Python project for ingesting job applications over IMAP, classi
 - Dropbox upload to structured folders and shared-link generation.
 - Persistent storage in MySQL/SQLite/PostgreSQL via SQLAlchemy.
 - Duplicate prevention using unique message/attachment constraints plus pre-check.
-- Logging to console + rotating file logs.
+- Logging to console + rotating file logs (`logs/logs.txt`).
 - Flask/Bootstrap HR dashboard with search + filters.
 
 ## Project Structure
@@ -92,6 +92,9 @@ Recommended cron:
 ```cron
 0 * * * * cd /path/to/automate-cv-dropbox && /usr/bin/python3 main.py >> logs/cron.log 2>&1
 ```
+
+> Important: hosting the dashboard (`passenger_wsgi.py`) does **not** run email sync automatically.
+> You must run `python3 main.py` via cron (or another scheduler) for CV fetch/upload to execute.
 
 ## Run Dashboard
 

@@ -61,6 +61,9 @@ Copy `.env.example` to `.env` and set values:
 - `EMAIL_PASS`
 - `IMAP_SERVER`
 - `IMAP_PORT`
+- `DROPBOX_APP_KEY`
+- `DROPBOX_APP_SECRET`
+- `DROPBOX_REFRESH_TOKEN` (recommended)
 - `DROPBOX_ACCESS_TOKEN`
 - `DROPBOX_BASE_PATH` (default `/CVs`)
 - `DATABASE_URL` (e.g. MySQL `mysql+pymysql://user:pass@host/db`)
@@ -100,5 +103,9 @@ Then visit `http://localhost:5000`.
 
 ## Notes
 
+- Dropbox auth supports:
+  - **Recommended:** `DROPBOX_APP_KEY` + `DROPBOX_APP_SECRET` + `DROPBOX_REFRESH_TOKEN`
+  - **Fallback:** `DROPBOX_APP_KEY` + `DROPBOX_APP_SECRET` + `DROPBOX_ACCESS_TOKEN`
+  - **Legacy fallback:** `DROPBOX_ACCESS_TOKEN` only
 - `.doc` extraction is accepted as attachment type, but legacy DOC text parsing is limited unless external converters are installed.
 - First successful run sets `sync_state.initial_backfill_complete=true`; later runs fetch only unseen emails.

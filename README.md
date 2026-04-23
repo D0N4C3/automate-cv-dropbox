@@ -5,6 +5,7 @@ Production-ready Python project for ingesting job applications over IMAP, classi
 ## Features
 
 - IMAP ingestion with first-run backfill (`SINCE 01-Jan-2026`) and incremental hourly sync (`UNSEEN`).
+- Built-in hourly sync scheduler in dashboard runtime (configurable via env vars).
 - Keyword role classification:
   - **Battery Expert**: `battery`, `lithium`, `lithium-ion`, `li-ion`, `expert`
   - **Sales & Marketing**: `sales`, `marketing`
@@ -69,6 +70,8 @@ Copy `.env.example` to `.env` and set values:
 - `DATABASE_URL` (e.g. MySQL `mysql+pymysql://user:pass@host/db`)
 - `APP_SECRET_KEY`
 - `LOG_LEVEL`
+- `ENABLE_HOURLY_SYNC` (`true`/`false`, default `true`)
+- `SYNC_INTERVAL_MINUTES` (default `60`)
 
 ## Setup
 
@@ -93,8 +96,19 @@ Recommended cron:
 0 * * * * cd /path/to/automate-cv-dropbox && /usr/bin/python3 main.py >> logs/cron.log 2>&1
 ```
 
-> Important: hosting the dashboard (`passenger_wsgi.py`) does **not** run email sync automatically.
-> You must run `python3 main.py` via cron (or another scheduler) for CV fetch/upload to execute.
+> By default, the dashboard runtime now includes an hourly sync scheduler.
+> If you disable it (`ENABLE_HOURLY_SYNC=false`), use cron with `python3 main.py` to keep ingestion running.
+
+
+## Automated Hourly Sync
+
+When the Flask dashboard starts (`run_dashboard.py` / `passenger_wsgi.py`), it now starts a background scheduler that runs the full email -> parse -> Dropbox upload flow once every hour by default.
+
+- Disable it with `ENABLE_HOURLY_SYNC=false`
+- Change frequency with `SYNC_INTERVAL_MINUTES=<minutes>`
+- Manual **Run Sync Now** remains available in the UI
+
+For deployments where you prefer cron-only execution, disable the scheduler and keep your existing cron for `python3 main.py`.
 
 ## Run Dashboard
 
@@ -146,6 +160,8 @@ In **Environment variables** (same screen), add your required values:
 - `DATABASE_URL`
 - `APP_SECRET_KEY`
 - `LOG_LEVEL`
+- `ENABLE_HOURLY_SYNC` (`true`/`false`, default `true`)
+- `SYNC_INTERVAL_MINUTES` (default `60`)
 
 ### 5) Initialize/restart
 - Click **Restart** for the Python app in cPanel after changes.

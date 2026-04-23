@@ -18,6 +18,8 @@ class Settings:
     app_secret_key: str = os.getenv("APP_SECRET_KEY", "dev-secret")
     log_level: str = os.getenv("LOG_LEVEL", "INFO")
     timezone: str = os.getenv("TIMEZONE", "UTC")
+    enable_hourly_sync: bool = os.getenv("ENABLE_HOURLY_SYNC", "true").lower() in {"1", "true", "yes"}
+    sync_interval_minutes: int = int(os.getenv("SYNC_INTERVAL_MINUTES", "60"))
     initial_backfill_date: date = date(2026, 1, 1)
 
 
